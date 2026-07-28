@@ -1,0 +1,92 @@
+================================================================================
+  FireFlyST-RE · Windows 上接入 QQ 群聊（仅 @ 回复）
+================================================================================
+
+一、准备
+--------
+1. 单独准备一个 QQ 小号作为机器人（不要用主号，有封号风险）
+2. 已安装 Node.js（建议 18+）
+3. 在本项目目录执行: pnpm install
+
+二、配置 .env
+-------------
+复制 .env.example 为 .env（若已有 .env 则追加以下项）:
+
+  ONEBOT_HTTP_URL=http://127.0.0.1:3000
+  ONEBOT_TOKEN=NapCat里HTTP服务端的Token（不是WebUI Token）
+  BOT_QQ=你的机器人QQ号
+  QQ_ALLOWED_GROUPS=123456789,987654321   （可选，不写则所有群生效）
+
+三、安装 NapCat（Windows）
+--------------------------
+1. 打开 https://github.com/NapNeko/NapCatQQ/releases
+2. 下载 Windows 版（Shell 或 Framework 均可）
+3. 解压后运行 NapCat，按提示登录机器人 QQ 小号
+4. 浏览器打开 NapCat WebUI（启动后终端会显示地址，常见 http://127.0.0.1:6099）
+
+四、NapCat 网络配置（关键）
+---------------------------
+在 WebUI -> 网络配置 中添加：
+
+【HTTP 服务端 / HTTP Server】用于接收你的程序发消息
+  - 启用
+  - Host: 127.0.0.1
+  - Port: 5700  （与 .env 里 ONEBOT_HTTP_URL 端口一致；勿与 Nuxt/前端 3000 冲突）
+  - Token: 自行设置一串密钥，并复制到 .env 的 ONEBOT_TOKEN
+    ※ 这是「HTTP 服务端」Token，不是 WebUI 登录 Token！两者不同！
+
+如何找到正确的 Token：
+  NapCat WebUI -> 网络配置 -> 「HTTP 服务端 / HTTP Server」-> 复制 Token
+  或查看 NapCat/config/onebot11_你的QQ号.json 里 httpServers[].token
+
+【HTTP 客户端 / HTTP Client / 反向 HTTP】用于把群消息推送给本项目
+  - 启用
+  - URL: http://127.0.0.1:619/qq/webhook
+  - Message Post Format: array  （推荐，便于识别 @）
+
+保存后重启 NapCat 使配置生效。
+
+五、启动顺序
+------------
+1. 先启动 NapCat，确认 QQ 在线
+2. 双击 start.bat，或在项目目录执行: pnpm start
+3. 浏览器访问 http://127.0.0.1:619/qq/test-onebot 验证 OneBot 连接
+
+六、群里测试
+------------
+在已加入的 QQ 群里 @机器人 并输入内容，例如:
+
+  @流萤小号 你好，今天匹诺康尼天气怎么样？
+
+只有 @ 机器人 的消息才会触发回复；普通聊天不会响应。
+
+七、常见问题
+------------
+Q: @ 了没反应？
+A: 检查 (1) NapCat 是否在线 (2) start.bat 是否在跑 (3) BOT_QQ 是否与登录号一致
+   (4) WebUI 里 HTTP Client URL 是否为 http://127.0.0.1:619/qq/webhook
+   (5) 若设置了 QQ_ALLOWED_GROUPS，当前群号是否在列表中
+
+Q: 403 token verify failed？
+A: 最常见原因：把 WebUI 登录 Token 填进了 ONEBOT_TOKEN。
+   WebUI Token 仅用于打开 NapCat 管理页面；发 QQ 消息要用 HTTP 服务端 Token。
+   改对后重启 pnpm start，并访问 http://127.0.0.1:619/qq/test-onebot 验证。
+
+Q: Unexpected token '<' / 返回 HTML 而非 JSON？
+A: ONEBOT_HTTP_URL 指向了错误端口。常见情况是 3000 被 Nuxt 前端占用，
+   NapCat HTTP 服务端实际未启动。请把 NapCat HTTP 服务端改到 5700，
+   .env 同步为 http://127.0.0.1:5700，重启 NapCat 后再试。
+
+Q: 提示 OneBot send_group_msg 失败？
+A: ONEBOT_HTTP_URL 端口与 NapCat HTTP Server 端口不一致，改成 WebUI 里显示的端口
+
+Q: ENOENT data/chats/qq_g...json？
+A: 首次 @ 对话时会自动创建，若仍报错请确认 data/chats 目录存在（代码已自动创建）
+
+Q: 回复很慢？
+A: DeepSeek 思考模式耗时较长，请耐心等待单条回复，属正常现象
+
+Q: 会话记录在哪？
+A: data/chats/qq_g{群号}_u{QQ号}.json，每个群成员独立亲密度与历史
+
+================================================================================

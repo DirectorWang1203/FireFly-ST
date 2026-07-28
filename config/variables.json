@@ -1,0 +1,9 @@
+{
+    "defaults": {
+        "affection": "100"
+    },
+    "limits": {
+        "affection_min": 0,
+        "affection_max": 100
+    }
+}
